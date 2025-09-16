@@ -31,8 +31,16 @@ spot = get_spot_data(start, stop, T_mpc)
 plot(spot["buy"])
 price_buy = spot["buy"]
 price_sell = spot["sell"]
+
+### here we prep the simulation of wind using SDEs
 df_nwp = get_historical_forecast_data(start, stop, T_mpc);
+#this calls one solution of the SDE using JuliaSims SDE framework and solver (which we wish to Monte Carlo sample efficiently)
 v_wind, p_wind, r_wind, q_wind, p_wind_l, prob = simulate_sde(df_nwp, start, stop, tspan, Δt, N_mpc);
+
+# #you can also simulate multiple trajectories with ensemble problems and analyze the moments of the solution (1000 trajectories)
+# @time sol, summ = simulate_ensemble_sde(df_nwp, start, stop, tspan, Δt, 1000);
+# plot(summ)
+
 
 data = Dict(
     "start" => start,

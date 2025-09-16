@@ -246,13 +246,21 @@ function simulate_sde(df_nwp::DataFrame,start::DateTime, stop::DateTime, tspan::
     return v, p, r, q, p_l, prob
 end
 
-function simulate_ensemble_sde(df_nwp::DataFrame, x₀::Array, start::DateTime, stop::DateTime, tspan::Tuple, Δt::Int, trajectories::Int)
+function simulate_ensemble_sde(df_nwp::DataFrame, start::DateTime, stop::DateTime, tspan::Tuple, Δt::Int, trajectories::Int)
     itp_nwp, itp_dnwp = get_interp_object_best_nwp(df_nwp, start, stop,  Δt,  0)
-    
-    x₀_l = natural_to_lamperti_transform(x₀)
+
 
     # here comes the weird stuff the sde takes the natural domain power as input, 
     # since also the transform is not an exact inverse
+    v_wind = itp_nwp(0) # initial wind speed in m/s
+    x₀ = [
+        v_wind,
+        0.0,
+        wind_curve(v_wind),
+        0.0
+    ]
+    
+    x₀_l = natural_to_lamperti_transform(x₀)
 
     x₀ = [
         x₀_l[1],
@@ -269,7 +277,7 @@ function simulate_ensemble_sde(df_nwp::DataFrame, x₀::Array, start::DateTime, 
     sol = StochasticDiffEq.solve(ensembleprob, SOSRI(), trajectories=trajectories)
     summ = EnsembleSummary(sol, tspan[1]:Δt/60:tspan[2])
     # display(plot(summ))
-    return sol
+    return sol, summ
 end
 
 function lamperti_ode(dx, x, θ, t)
